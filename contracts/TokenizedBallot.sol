@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-
 interface IMyToken {
     function getPastVotes(
-        address account, 
+        address account,
         uint256 blockNumber
     ) external view returns (uint256);
 }
-
 
 contract Ballot {
     struct Proposal {
@@ -21,12 +19,11 @@ contract Ballot {
     IMyToken public tokenContract;
     Proposal[] public proposals;
 
-
     constructor(
         bytes32[] memory proposalNames,
-        address _tokenContract, 
-        uint256 _targetBlockNumber) {
-        
+        address _tokenContract,
+        uint256 _targetBlockNumber
+    ) {
         tokenContract = IMyToken(_tokenContract);
         targetBlockNumber = _targetBlockNumber;
         for (uint i = 0; i < proposalNames.length; i++) {
@@ -36,19 +33,20 @@ contract Ballot {
 
     function vote(uint proposal, uint256 amount) external {
         //TODO
-        
-        // uint256 temp_VotingPower = 0; // Replace temp_VotingPower 
+
+        // uint256 temp_VotingPower = 0; // Replace temp_VotingPower
         // require(temp_VotingPower >= amount);
         require(votingPower(msg.sender) >= amount);
         votingPowerSpent[msg.sender] += amount;
-        proposals[proposal].voteCount += amount; 
+        proposals[proposal].voteCount += amount;
         // Require the msg.sender to have at least `amount` voting power
         // account the VoterCount for the proposal of index `proposal`
     }
 
-    function votingPower(address account) public view returns(uint256){
-        return tokenContract.getPastVotes(account, targetBlockNumber) - 
-        votingPowerSpent[account];
+    function votingPower(address account) public view returns (uint256) {
+        return
+            tokenContract.getPastVotes(account, targetBlockNumber) -
+            votingPowerSpent[account];
     }
 
     function winningProposal() public view returns (uint winningProposal_) {
