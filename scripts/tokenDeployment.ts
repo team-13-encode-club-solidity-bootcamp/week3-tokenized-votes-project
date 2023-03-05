@@ -1,19 +1,20 @@
 import { ethers } from "hardhat";
 import * as dotenv from "dotenv";
 import { Team13Token__factory } from "../typechain-types";
-import { BigNumber } from "ethers";
 dotenv.config();
 
 // To run this script:
-// yarn run ts-node --files scripts/tokenDeployment.ts <amountToMint>(21000000000000000000000000/21 million tokens)
+// yarn run ts-node --files scripts/tokenDeployment.ts <amountToMint>
+// yarn run ts-node --files scripts/tokenDeployment.ts 21000000
 
 async function tokenDeployment() {
   const args = process.argv;
   // console.log(args);
-  const amountToMint = BigNumber.from(args[2]);
+  const amountToMint = args[2];
   // console.log(amountToMint);
   if (!amountToMint) throw new Error("Missing parameter : amount to mint");
   // return;
+  const convertedAmount = ethers.utils.parseEther(amountToMint);
 
   // get default provider from hardhat config
   const provider = ethers.provider;
@@ -32,7 +33,9 @@ async function tokenDeployment() {
   // connect with signer and check the balance
   const signer = wallet.connect(provider);
   const balance = await signer.getBalance();
-  console.log(`Wallet balance: ${balance} Wei`);
+  console.log(
+    `Wallet balance: ${balance} Wei, ${ethers.utils.formatEther(balance)} ETH`
+  );
   // return;
 
   console.log("Deploying token contract");
@@ -52,11 +55,29 @@ async function tokenDeployment() {
   );
   // return;
 
-  const mintTx = await team13TokenContract.mint(signer.address, amountToMint);
+  console.log("Minting token");
+  const mintTx = await team13TokenContract.mint(
+    signer.address,
+    convertedAmount
+  );
   const mintTxReceipt = await mintTx.wait();
   totalSupply = await team13TokenContract.totalSupply();
   console.log(
     `The mint transaction was completed in the block ${mintTxReceipt.blockNumber} \nThe total supply now is ${totalSupply} decimal units`
+  );
+
+  console.log("Self delegated as deployer");
+  const delegateTx = await team13TokenContract
+    .connect(signer)
+    .delegate(signer.address);
+  const delegateTxReceipt = await delegateTx.wait();
+  console.log(`Tokens delegated at block ${delegateTxReceipt.blockNumber}`);
+
+  const votePowerDeployer = await team13TokenContract.getVotes(signer.address);
+  console.log(
+    `As deployer you have ${ethers.utils.formatEther(
+      votePowerDeployer
+    )} voting power`
   );
 }
 
