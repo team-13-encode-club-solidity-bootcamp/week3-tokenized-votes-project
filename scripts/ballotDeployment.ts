@@ -4,23 +4,28 @@ import { Ballot__factory } from "../typechain-types";
 dotenv.config();
 
 // To run this script:
-// yarn run ts-node --files scripts/ballotDeployment.ts <tokenContractAddress> <blockNumber> "arg1" "arg2" "arg3"
+// yarn run ts-node --files scripts/ballotDeployment.ts <tokenContractAddress> <targetBlockNumber> "arg1" "arg2" "arg3"
+// yarn run ts-node --files scripts/ballotDeployment.ts 0x56da1240DB296aAf28848A510F29482801615B0D 8600851 "chocolate" "strawberry" "banana"
 
 function convertStringArrayToBytes32(array: string[]) {
   const bytes32Array = [];
   for (let index = 0; index < array.length; index++) {
     bytes32Array.push(ethers.utils.formatBytes32String(array[index]));
   }
+  // console.log(bytes32Array);
   return bytes32Array;
 }
 
 async function ballotDeployment() {
   const args = process.argv;
   // console.log(args);
-  const tokenAddress = args[2];
-  const blockNumber = parseInt(args[3]);
+  const tokenContractAddress = args[2];
+  const targetBlockNumber = parseInt(args[3]);
   const proposals = args.slice(4);
   // console.log(proposals);
+  if (!tokenContractAddress)
+    throw new Error("Missing parameter : token contract address");
+  if (!targetBlockNumber) throw new Error("Missing parameter : block number");
   if (!proposals.length) throw new Error("Missing parameter : proposals");
   // return;
 
@@ -41,7 +46,9 @@ async function ballotDeployment() {
   // connect with signer and check the balance
   const signer = wallet.connect(provider);
   const balance = await signer.getBalance();
-  console.log(`Wallet balance: ${balance} Wei`);
+  console.log(
+    `Wallet balance: ${balance} Wei, ${ethers.utils.formatEther(balance)} ETH`
+  );
   // return;
 
   console.log("Deploying Ballot contract");
@@ -54,8 +61,8 @@ async function ballotDeployment() {
   const ballotContractFactory = new Ballot__factory(signer);
   const ballotContract = await ballotContractFactory.deploy(
     convertStringArrayToBytes32(proposals),
-    tokenAddress,
-    blockNumber
+    tokenContractAddress,
+    targetBlockNumber
   );
   const deployTxReceipt = await ballotContract.deployTransaction.wait();
   console.log(
