@@ -58,10 +58,11 @@ async function checkingVotingPower() {
   await Promise.all(
     addresses.map(async (address) => {
       const votingPower = await ballotContract.votingPower(address);
+      const votingPowerSpent = await ballotContract.votingPowerSpent(address);
       console.log(
         `Address: ${address} - Voting Power: ${ethers.utils.formatEther(
           votingPower
-        )}`
+        )} - Voting Power Spent: ${ethers.utils.formatEther(votingPowerSpent)}`
       );
     })
   );
